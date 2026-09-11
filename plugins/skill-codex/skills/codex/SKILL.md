@@ -9,25 +9,64 @@ description: Use when the user asks to run Codex CLI (codex exec, codex resume) 
 
 These are this skill's operating limits, not a claim about every effort the underlying model supports. Apply them to new sessions, resumes, configuration defaults, and model changes.
 
-| Model | Permitted reasoning efforts | Default effort | Guidance |
+| Model | CLI model identifier | Permitted reasoning efforts | Default effort |
 | --- | --- | --- | --- |
-| `gpt-6-astra` | `low`, `medium` | `medium` | Explicit model selection; never escalate above Medium |
-| `gpt-5.6-sol` | `medium`, `high`; exceptional `xhigh` | `high` | Default GPT-5.6 option |
-| `gpt-5.6-terra` | `medium`, `high`, `xhigh` | `high` | Balanced everyday option |
-| `gpt-5.6-luna` | `medium`, `high`, `xhigh`, `max` | `high` | Fast and affordable option |
+| GPT-6 Astra | `gpt-6-astra` | Low, Medium | Medium |
+| GPT-5.6 Sol | `gpt-5.6-sol` | Medium, High; exceptional Extra High | High |
+| GPT-5.6 Terra | `gpt-5.6-terra` | Medium, High, Extra High | High |
+| GPT-5.6 Luna | `gpt-5.6-luna` | Medium, High, Extra High, Max | High |
 
-- Overall default: `gpt-5.6-sol` at `high`. Adding Astra does not change that default.
-- Never launch or resume with `model_reasoning_effort="ultra"`, including an inherited setting. Max is permitted only for Luna among the primary models.
-- Sol XHigh is exceptional. Before using it, state a concrete reason why High is insufficient, such as an unresolved correctness problem after a substantive High attempt or a difficult architectural conflict. Task size alone is insufficient. An explicit request still needs task-specific justification; ask for missing context only if the task does not supply it.
-- Honor a model/effort already specified by the user. For missing choices, use `AskUserQuestion` to select the model first, then offer only its permitted efforts; do not ask again for choices already supplied. If the user has no preference or asks you to choose, use the defaults.
-- For an explicitly requested disallowed pair, report the mismatch and propose that model's default; obtain the user's replacement choice unless they already authorized you to choose. Never silently clamp to the model's technical maximum or substitute another model.
-- Legacy compatibility remains available on explicit request: `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`, `gpt-5.3-codex`. Offer only efforts supported by that model and installed CLI, with a skill ceiling of `xhigh`; default to `high` only if supported. Do not assume every legacy model supports the same efforts.
+Use **model** and **reasoning effort** as the selection terminology. Present readable model names and effort labels to the user; use the corresponding identifiers and lowercase configuration values in CLI arguments.
+
+| Reasoning effort label | CLI configuration value |
+| --- | --- |
+| Low | `low` |
+| Medium | `medium` |
+| High | `high` |
+| Extra High | `xhigh` |
+| Max | `max` |
+
+- Overall default: GPT-5.6 Sol at High. Adding Astra does not change that default.
+- Never launch or resume with `model_reasoning_effort="ultra"`, including an inherited setting. Do not offer Ultra as a selection.
+- Max is permitted only for Luna among the primary models.
+- Sol Extra High is exceptional. Before using it, state a concrete reason why High is insufficient, such as an unresolved correctness problem after a substantive High attempt or a difficult architectural conflict. Task size alone is insufficient. An explicit request still needs task-specific justification; ask for missing context only if the task does not supply it.
+- For an explicitly requested disallowed pair, report the mismatch and propose that model's default. Obtain the user's replacement choice unless they already authorized you to choose. Never silently clamp to the model's technical maximum or substitute another model.
+- Legacy compatibility remains available on explicit request: `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`, and `gpt-5.3-codex`. Offer only efforts supported by that model and installed CLI, with a skill ceiling of Extra High. Default to High only if supported. Do not assume every legacy model supports the same efforts.
 - Check the installed CLI/account's available models when availability is uncertain. If a requested model is unavailable, report it instead of changing the model without agreement.
+
+## Optional user-driven selection
+
+For a new session, preserve the user's opportunity to select the model and reasoning effort. Defaults are available for convenience; they do not mean selection questions should be silently skipped.
+
+1. Read the user's prompt and existing session instructions for an explicitly supplied model, reasoning effort, acceptance of defaults, or delegation of the choice.
+2. If the model is unspecified and the user has not accepted defaults or delegated selection, use `AskUserQuestion` to ask which model to use.
+   - Offer GPT-6 Astra, GPT-5.6 Sol, GPT-5.6 Terra, and GPT-5.6 Luna.
+   - Identify GPT-5.6 Sol as the default.
+   - Keep legacy models available on explicit request.
+3. Once the model is known, if reasoning effort is unspecified and the user has not accepted its default or delegated selection, use `AskUserQuestion` to ask which reasoning effort to use.
+   - Offer only that model's permitted efforts.
+   - Use Low, Medium, High, Extra High, and Max as display labels where applicable.
+   - Identify the selected model's default.
+   - Label Sol Extra High as exceptional and apply its justification rule.
+4. Ask only for missing choices.
+   - Both supplied and permitted: proceed without selection questions.
+   - Model supplied: ask only for reasoning effort.
+   - Reasoning effort supplied: ask only for the model, then validate the combination.
+   - Neither supplied: ask for the model first, then its reasoning effort.
+   - If an interface supports dependent questions in one interaction, they may be combined; do not present an unrestricted shared effort menu.
+5. Accept "use defaults," "no preference," or equivalent delegation without another selection question.
+   - Neither choice supplied: default to GPT-5.6 Sol at High.
+   - Model supplied, effort default accepted: use that model's default.
+   - Effort supplied, model default accepted: retain that effort only if permitted for Sol; otherwise explain the mismatch and resolve it under the model policy.
+   - Do not discard an explicit choice merely because the user delegates the other choice.
+6. Restate the resolved model and reasoning effort before execution.
+
+For resumes, use the resume procedure below. Do not repeat these questions when the intended session's model and reasoning effort are known and permitted.
 
 ## Running a Task
 
 1. Identify the execution tool's actual shell and workspace. Windows and the VS Code terminal profile do not by themselves tell you which shell Claude's tool uses. For native PowerShell, read [Windows PowerShell execution](references/windows-powershell.md). For Git Bash or WSL, use Bash syntax and paths appropriate to that environment; keep the Codex executable, authentication context, and repository in the intended environment.
-2. Verify `codex --version` from that execution environment. Resolve the model and reasoning effort using the policy above. Check `codex exec --help` and `codex exec resume --help` if the installed version's flag placement or capabilities are uncertain.
+2. Verify `codex --version` from that execution environment. Resolve the model and reasoning effort using the policy and user-driven selection procedure above. Check `codex exec --help` and `codex exec resume --help` if the installed version's flag placement or capabilities are uncertain.
 3. Select the sandbox required by the task; default to `--sandbox read-only`. Use `workspace-write` for authorized local edits. Broad access requires existing authorization; do not change sandbox or execution policy just to fix shell syntax, PATH, authentication, or network errors.
 4. Assemble arguments separately from prompt text:
    - `-m, --model <MODEL>` and `-c, --config <KEY=VALUE>`, with an explicit policy-compliant `model_reasoning_effort`.
@@ -75,10 +114,11 @@ fi
 ## Resuming and following up
 
 1. Identify the intended session and workspace. Prefer an explicit session ID when multiple workspaces or sessions are in use. Use `--last` only when the latest session in the intended working directory is the correct one; do not broaden selection with `--all` implicitly.
-2. Determine the effective model and effort from recorded session settings and any requested changes. Preserve a permitted pair. Revalidate effort whenever the model changes: Astra cannot inherit Sol High.
-3. For a disallowed inherited effort, announce replacement with that model's default (Sol XHigh also needs current task justification). If the user explicitly requests the disallowed setting, follow the mismatch rule in the policy above. If the inherited model is unknown, announce and use Sol High; if only the effort is unknown, use the known model's permitted default. Explicitly requested unavailable or unlisted models require resolution, not silent substitution.
-4. Pass the resolved model and effort explicitly on resume so local configuration or session inheritance cannot bypass the policy. Preserve the authorized sandbox; do not broaden access. Use flags in the positions accepted by the installed `codex exec resume --help`. If that version cannot apply the necessary overrides, do not run a noncompliant resume; explain and offer a new compliant session with a concise handoff.
+2. Determine the effective model and reasoning effort from recorded session settings and any requested changes. Preserve a permitted pair without repeating selection questions. Revalidate effort whenever the model changes: Astra cannot inherit Sol High.
+3. For a disallowed inherited effort, announce replacement with that model's default. Sol Extra High also needs current task justification. If the user explicitly requests the disallowed setting, follow the mismatch rule in the policy above. If the inherited model is unknown, announce and use Sol High; if only the effort is unknown, use the known model's permitted default. Explicitly requested unavailable or unlisted models require resolution, not silent substitution.
+4. Pass the resolved model and reasoning effort explicitly on resume so local configuration or session inheritance cannot bypass the policy. Preserve the authorized sandbox; do not broaden access. Use flags in the positions accepted by the installed `codex exec resume --help`. If that version cannot apply the necessary overrides, do not run a noncompliant resume; explain and offer a new compliant session with a concise handoff.
 5. Pipe the follow-up through stdin using `-`. For example, after selecting Sol High and the intended working directory in Bash:
+
    ```bash
    codex_log=$(mktemp)
    printf '%s\n' 'Continue the analysis and investigate the remaining risks.' |
@@ -86,8 +126,10 @@ fi
        -m gpt-5.6-sol -c "model_reasoning_effort='high'" - 2>"$codex_log"
    codex_status=$?
    ```
+
    Replace `--last` with the known session ID when appropriate. See the PowerShell reference for equivalent input and argument handling.
-6. Restate the selected model, effort, and sandbox when proposing further actions. Continue already authorized work; use `AskUserQuestion` when a genuine next-step decision or clarification is needed.
+
+6. Restate the selected model, reasoning effort, and sandbox when proposing further actions. Continue already authorized work; use `AskUserQuestion` when a genuine next-step decision or clarification is needed.
 
 ## Execution timeouts
 
@@ -99,11 +141,11 @@ These are initial host timeout budgets, not model latency guarantees:
 
 | Reasoning effort | Initial timeout budget |
 | --- | --- |
-| `low` | 150s |
-| `medium` | 300s |
-| `high` | 600s |
-| `xhigh` | 1200s |
-| `max` | 1800s |
+| Low | 150s |
+| Medium | 300s |
+| High | 600s |
+| Extra High | 1200s |
+| Max | 1800s |
 
 If the host yields before completion, resume monitoring the same process. On cancellation or timeout, establish whether the child is still running and terminate only that task's process tree when cancellation is intended. Preserve partial output and report the interruption.
 
@@ -112,26 +154,26 @@ If the host yields before completion, resume monitoring the same process. On can
 Codex is powered by OpenAI models with their own knowledge cutoffs and limitations. Treat Codex as a **colleague, not an authority**.
 
 ### Guidelines
+
 - **Trust your own knowledge** when confident. If Codex claims something you know is incorrect, push back directly.
 - **Research disagreements** using WebSearch or documentation before accepting Codex's claims. Share findings with Codex via resume if needed.
-- **Remember knowledge cutoffs** - Codex may not know about recent releases, APIs, or changes that occurred after its training data.
-- **Don't defer blindly** - Codex can be wrong. Evaluate its suggestions critically, especially regarding:
-  - Model names and capabilities
-  - Recent library versions or API changes
-  - Best practices that may have evolved
+- **Remember knowledge cutoffs** — Codex may not know about recent releases, APIs, or changes that occurred after its training data.
+- **Don't defer blindly** — Codex can be wrong. Evaluate its suggestions critically, especially regarding model names and capabilities, recent library versions or API changes, and best practices that may have evolved.
 
 ### When Codex is Wrong
-1. State your disagreement clearly to the user
-2. Provide evidence (your own knowledge, web search, docs)
-3. Optionally resume the Codex session to discuss the disagreement. **Identify yourself as Claude** so Codex knows it's a peer AI discussion. Use your actual model name (e.g., the model you are currently running as) instead of a hardcoded name:
-   Add this as prompt text using the selected shell's stdin method, after applying the resume policy:
+
+1. State your disagreement clearly to the user.
+2. Provide evidence from your own knowledge, web search, or documentation.
+3. Optionally resume the Codex session to discuss the disagreement. Identify yourself as Claude so Codex knows it is a peer AI discussion. Use your actual model name instead of a hardcoded name. Add this as prompt text using the selected shell's stdin method, after applying the resume policy:
+
    > This is Claude (<your current model name>) following up. I disagree with [X] because [evidence]. What's your take on this?
-4. Frame disagreements as discussions, not corrections - either AI could be wrong
-5. Let the user decide how to proceed if there's genuine ambiguity
+
+4. Frame disagreements as discussions, not corrections; either AI could be wrong.
+5. Let the user decide how to proceed if there is genuine ambiguity.
 
 ## Error Handling
 
-- Stop and report failures whenever `codex --version` or `codex exec` exits non-zero; include the exit status and relevant captured diagnostics, and request direction before retrying unless that recovery was already authorized.
+- Stop and report failures whenever `codex --version` or `codex exec` exits non-zero. Include the exit status and relevant captured diagnostics, and request direction before retrying unless that recovery was already authorized.
 - Before using high-impact flags (`--full-auto`, `--sandbox danger-full-access`, `--skip-git-repo-check`), ask for permission using `AskUserQuestion` unless it was already given.
 - Summarize warnings or partial results; ask how to adjust when they leave a material decision unresolved.
 - On Windows, diagnose launcher, shell, PATH, encoding, and authentication context using the PowerShell reference. Do not disable execution policy or elevate as an automatic workaround.
