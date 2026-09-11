@@ -51,12 +51,14 @@ Use codex to analyze this repository and suggest improvements for my claude code
 
 **Claude Code response:**
 Claude will activate the Codex skill and:
-1. Ask which model to use (`gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`, or `gpt-5.3-codex`) unless already specified in your prompt.
-2. Ask which reasoning effort level (`low`, `medium`, or `high`) unless already specified in your prompt.
+1. Ask which model to use unless already specified in your prompt. Defaults to `gpt-5.6-sol`.
+   - *GPT-5.6:* `gpt-5.6-sol` (frontier), `gpt-5.6-terra` (balanced), `gpt-5.6-luna` (fast & affordable)
+   - *Legacy:* `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`, `gpt-5.3-codex`
+2. Ask which reasoning effort level (`low`, `medium`, `high`, `xhigh`, `max`, or `ultra`) unless already specified in your prompt. Defaults to `high`. `max`/`ultra` require a GPT-5.6 model, `ultra` is only available on `sol`/`terra`, and legacy models cap at `xhigh`.
 3. Select appropriate sandbox mode (defaults to `read-only` for analysis)
 4. Run a command like:
 ```bash
-codex exec -m gpt-5.3-codex-spark \
+codex exec -m gpt-5.6-sol \
   --config model_reasoning_effort="high" \
   --sandbox read-only \
   --full-auto \
