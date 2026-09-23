@@ -12,9 +12,8 @@ These are this skill's operating limits, not a claim about every effort the unde
 | Model | CLI model identifier | Permitted reasoning efforts | Default effort |
 | --- | --- | --- | --- |
 | GPT-6 Astra | `gpt-6-astra` | Low, Medium | Medium |
-| GPT-5.6 Sol | `gpt-5.6-sol` | Medium, High; exceptional Extra High | High |
-| GPT-5.6 Terra | `gpt-5.6-terra` | Medium, High, Extra High | High |
-| GPT-5.6 Luna | `gpt-5.6-luna` | Medium, High, Extra High, Max | High |
+| GPT-6 Sol | `gpt-6-sol` | Medium, High; exceptional Extra High | High |
+| GPT-6 Luna | `gpt-6-luna` | Medium, High, Extra High, Max | High |
 
 Use **model** and **reasoning effort** as the selection terminology. Present readable model names and effort labels to the user; use the corresponding identifiers and lowercase configuration values in CLI arguments.
 
@@ -26,7 +25,7 @@ Use **model** and **reasoning effort** as the selection terminology. Present rea
 | Extra High | `xhigh` |
 | Max | `max` |
 
-- Overall default: GPT-5.6 Sol at High. Adding Astra does not change that default.
+- Overall default: GPT-6 Sol at High. Adding Astra does not change that default.
 - Never launch or resume with `model_reasoning_effort="ultra"`, including an inherited setting. Do not offer Ultra as a selection.
 - Max is permitted only for Luna among the primary models.
 - Sol Extra High is exceptional. Before using it, state a concrete reason why High is insufficient, such as an unresolved correctness problem after a substantive High attempt or a difficult architectural conflict. Task size alone is insufficient. An explicit request still needs task-specific justification; ask for missing context only if the task does not supply it.
@@ -40,8 +39,8 @@ For a new session, preserve the user's opportunity to select the model and reaso
 
 1. Read the user's prompt and existing session instructions for an explicitly supplied model, reasoning effort, acceptance of defaults, or delegation of the choice.
 2. If the model is unspecified and the user has not accepted defaults or delegated selection, use `AskUserQuestion` to ask which model to use.
-   - Offer GPT-6 Astra, GPT-5.6 Sol, GPT-5.6 Terra, and GPT-5.6 Luna.
-   - Identify GPT-5.6 Sol as the default.
+   - Offer GPT-6 Astra, GPT-6 Sol, and GPT-6 Luna.
+   - Identify GPT-6 Sol as the default.
    - Keep legacy models available on explicit request.
 3. Once the model is known, if reasoning effort is unspecified and the user has not accepted its default or delegated selection, use `AskUserQuestion` to ask which reasoning effort to use.
    - Offer only that model's permitted efforts.
@@ -55,7 +54,7 @@ For a new session, preserve the user's opportunity to select the model and reaso
    - Neither supplied: ask for the model first, then its reasoning effort.
    - If an interface supports dependent questions in one interaction, they may be combined; do not present an unrestricted shared effort menu.
 5. Accept "use defaults," "no preference," or equivalent delegation without another selection question.
-   - Neither choice supplied: default to GPT-5.6 Sol at High.
+   - Neither choice supplied: default to GPT-6 Sol at High.
    - Model supplied, effort default accepted: use that model's default.
    - Effort supplied, model default accepted: retain that effort only if permitted for Sol; otherwise explain the mismatch and resolve it under the model policy.
    - Do not discard an explicit choice merely because the user delegates the other choice.
@@ -86,7 +85,7 @@ The single-quoted heredoc preserves literal prompt content. Choose a delimiter a
 
 ```bash
 codex_log=$(mktemp)
-codex_args=(exec -m gpt-5.6-sol
+codex_args=(exec -m gpt-6-sol
   -c "model_reasoning_effort='high'"
   --sandbox read-only --skip-git-repo-check
   -C "/path/to/project")
@@ -123,7 +122,7 @@ fi
    codex_log=$(mktemp)
    printf '%s\n' 'Continue the analysis and investigate the remaining risks.' |
      codex exec --skip-git-repo-check resume --last \
-       -m gpt-5.6-sol -c "model_reasoning_effort='high'" - 2>"$codex_log"
+       -m gpt-6-sol -c "model_reasoning_effort='high'" - 2>"$codex_log"
    codex_status=$?
    ```
 
