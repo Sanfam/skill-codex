@@ -13,6 +13,7 @@ These are this skill's operating limits, not a claim about every effort the unde
 | --- | --- | --- | --- |
 | GPT-6 Astra | `gpt-6-astra` | Low, Medium | Medium |
 | GPT-6 Sol | `gpt-6-sol` | Medium, High; exceptional Extra High | High |
+| GPT-5.6 Luna | `gpt-5.6-luna` | Medium, High, Extra High, Max | High |
 | GPT-6 Luna | `gpt-6-luna` | Medium, High, Extra High, Max | High |
 
 Use **model** and **reasoning effort** as the selection terminology. Present readable model names and effort labels to the user; use the corresponding identifiers and lowercase configuration values in CLI arguments.
